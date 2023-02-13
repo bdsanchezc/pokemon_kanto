@@ -8,7 +8,7 @@ import confetti from "canvas-confetti";
 import { pokeApi } from "../../api";
 import { Layout } from "../../components/layouts";
 import { Pokemon, PokemonsListResponse } from "../../intefaces";
-import { existInFavorites, toggleFavorite } from "../../utils";
+import { existInFavorites, getPokemonInfo, toggleFavorite } from "../../utils";
 
 interface Props {
     pokemon: Pokemon
@@ -104,12 +104,20 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
 
 export const getStaticProps: GetStaticProps = async ({params}) => {
     const { name } = params as {name: string};
-    const { data } = await pokeApi.get<Pokemon>(`/pokemon/${name}`);
+    const data = await getPokemonInfo(name);    
+
+    if(!data) {
+        return {
+            redirect: {
+                destination: '/',
+                permanent: false
+            }
+        }
+    }
  
     return {
-        props: {
-            pokemon: data
-        }
+        props: { pokemon: data },
+        revalidate: 86400 // 1 día (60*60*24)
     }
 }
 

@@ -6,10 +6,8 @@ import { Button, Card, Container, Grid, Text } from "@nextui-org/react";
 import confetti from 'canvas-confetti';
 
 import { Layout } from "../../components/layouts"
-import { pokeApi } from "../../api";
 import { Pokemon } from "../../intefaces";
-import { existInFavorites, toggleFavorite } from "../../utils";
-
+import { existInFavorites, toggleFavorite, getPokemonInfo } from "../../utils";
 
 interface Props {
     pokemon: Pokemon
@@ -93,25 +91,34 @@ const PokemonPage: NextPage<Props> = ({pokemon}: Props) => {
 // You should use getStaticPaths if you’re statically pre-rendering pages that use dynamic routes
 
 export const getStaticPaths: GetStaticPaths = async (ctx) => {
-    const pokemonList = [...Array(151)].map((value, index) => `${index + 1}`);    
+    const pokemonList = [...Array(151)].map((value, index) => `${index + 1}`);
 
     return {
         paths: pokemonList.map( id => ({
             params: { id }
         })),
-        fallback: false
+        // fallback: false
+        fallback: 'blocking'
     }
 }
 
 export const getStaticProps: GetStaticProps = async ({params}) => {
 
     const { id } = params as {id: string};
-    const { data } = await pokeApi.get<Pokemon>(`/pokemon/${id}`);
+    const data = await getPokemonInfo(id);    
+
+    if(!data) {
+        return {
+            redirect: {
+                destination: '/',
+                permanent: false
+            }
+        }
+    }
  
     return {
-        props: {
-            pokemon: data
-        }
+        props: { pokemon: data },
+        revalidate: 86400 // 1 día (60*60*24)
     }
 }
 
